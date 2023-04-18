@@ -103,3 +103,5 @@ def generate_population():
         population.append(level)
 
     return population
+
+generate_population()
