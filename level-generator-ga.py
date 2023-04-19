@@ -34,7 +34,7 @@ level = {
 }
 
 
-def generate_population():
+def generate_chromosome():
     valid_x_bush = list(range(2, 60))
     valid_y_bush = 12
 
@@ -47,7 +47,7 @@ def generate_population():
     valid_x_pipe = list(range(8, 30))
     valid_y_pipe = list(range(9, 12))
     valid_z_pipe = list(range(4, 6))
-    # pre-requisite 
+    # pre-requisite
     valid_x_ground = list(range(0, 59))
     valid_y_ground = list(range(3, 12))
 
@@ -135,89 +135,16 @@ def generate_population():
         json.dump(level, f, indent=1)
     return
 
-generate_population()
-# def generate_population():
-#     valid_x = list(range(0, 56))
-#     valid_y = list(range(0, 12))
-#     valid_entity_types = ["CoinBox", "coinBrick", "coin", "Goomba", "Koopa", "RandomBox"]
-#
-#     population = []
-#     for i in range(50):
-#         level = {
-#             "id": 1,
-#             "length": 60,  # random.randint(40, 80),
-#             "level": {
-#                 "objects": {
-#                     "bush": [],
-#                     "sky": [],
-#                     "cloud": [],
-#                     "pipe": [],
-#                     "ground": []
-#                 },
-#                 "layers": {
-#                     "sky": {
-#                         "x": [0, 0],
-#                         "y": [0, 0]
-#                     },
-#                     "ground": {
-#                         "x": [0, 0],
-#                         "y": [0, 0]
-#                     }
-#                 },
-#                 "entities": {
-#                     "CoinBox": [],
-#                     "coinBrick": [],
-#                     "coin": [],
-#                     "Goomba": [],
-#                     "Koopa": [],
-#                     "RandomBox": []
-#                 }
-#             }
-#         }
-#
-#         # Generate random objects
-#         for obj_type in level["level"]["objects"]:
-#             obj_count = random.randint(0, 5)
-#             for j in range(obj_count):
-#                 x = random.choice(valid_x)
-#                 y = random.choice(valid_y)
-#                 if obj_type == "sky":
-#                     level["level"]["objects"][obj_type].append([x, 13])
-#                     continue
-#                 if obj_type == "bush":
-#                     level["level"]["objects"][obj_type].append([x, 12])
-#                     continue
-#                 if obj_type != "pipe":
-#                     level["level"]["objects"][obj_type].append([x, y, 4])
-#                 else:
-#                     level["level"]["objects"][obj_type].append([x, y])
-#
-#         # Generate random layers
-#         for layer_name in level["level"]["layers"]:
-#             x_start = random.randint(0, 14)
-#             x_end = random.randint(x_start + 1, level["length"])
-#             y = random.randint(0, 16)
-#             level["level"]["layers"][layer_name]["x"] = [x_start, x_end]
-#             level["level"]["layers"][layer_name]["y"] = [y, y]
-#
-#         # Generate random entities
-#         for entity_type in valid_entity_types:
-#             entity_count = random.randint(0, 5)
-#             for j in range(entity_count):
-#                 x = random.choice(valid_x)
-#                 y = random.choice(valid_y)
-#                 if entity_type == "RandomBox":
-#                     entity_data = [x, y, random.choice(["RedMushroom", "GreenMushroom", "Star"])]
-#                 else:
-#                     entity_data = [x, y]
-#                 level["level"]["entities"][entity_type].append(entity_data)
-#
-#         population.append(level)
-#
-#     return population
-#
-#
-# p = generate_population()
-# print(json.dumps(p[0], indent=1))
-# with open("Level1-1.json", "w") as f:
-#     json.dump(p[0], f, indent=1)
+
+generate_chromosome()
+init_population = 50
+
+
+def generate_population():
+    population = []
+    for i in range(0, 50):
+        population.append(generate_chromosome())
+    return population
+
+#def fitness(chromosome_list):
+
