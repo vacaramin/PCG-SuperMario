@@ -5,8 +5,9 @@ SuperMario Re-implemented with Procedural Content Generation using genetic algor
 Base Mario Code: https://github.com/mx0c/super-mario-python
 
 # Pre-requisites 
-Pygame, scipy, numpy
--- run commands
+Pygame, scipy
+
+run commands
 python -m pip install pygame
 python -m pip install scipy
 
