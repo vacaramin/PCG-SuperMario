@@ -47,7 +47,7 @@ def generate_population():
     valid_x_pipe = list(range(8, 30))
     valid_y_pipe = list(range(9, 12))
     valid_z_pipe = list(range(4, 6))
-
+    # pre-requisite 
     valid_x_ground = list(range(0, 59))
     valid_y_ground = list(range(3, 12))
 
