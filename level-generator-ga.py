@@ -2,6 +2,13 @@ import random
 import json
 
 
+#
+# Initial population.
+# Fitness function.
+# Selection.
+# Crossover.
+# Mutation.
+
 class Chromosome:
     def __init__(self, level):
         self.obj_bush = level["objects"]["bush"]
@@ -19,6 +26,48 @@ class Chromosome:
         self.ent_goomba = level["entities"]["Goomba"]
         self.ent_koopa = level["entities"]["Koopa"]
         self.ent_random_box = level["entities"]["RandomBox"]
+
+        def fitness(self):
+            fitness = 0
+
+            # more entities, fitter the chromosome is
+            fitness += (10 * len(self.ent_coinBox)) + (5 * len(self.ent_coinBrick)) + (5 * len(self.ent_coin)) + (
+                    4 * len(self.ent_goomba)) + (4 * len(self.ent_koopa)) + (3 * len(self.ent_random_box))
+            return fitness
+
+
+def crossover_mutation(level1, level2, crossover_percentage):
+    # swapping object
+    objects = ["bush", "sky", "cloud", "pipe", "ground"]
+
+    bush_len1 = len(level1["objects"]["bush"])
+    bush_len2 = len(level2["objects"]["bush"])
+
+    sky_len1 = len(level1["objects"]["sky"])
+    sky_len2 = len(level2["objects"]["sky"])
+
+    cloud_len1 = len(level1["objects"]["cloud"])
+    cloud_len2 = len(level2["objects"]["cloud"])
+
+    pipe_len1 = len(level1["objects"]["pipe"])
+    pipe_len2 = len(level2["objects"]["pipe"])
+
+    ground_len1 = len(level1["objects"]["ground"])
+    ground_len2 = len(level2["objects"]["ground"])
+
+
+    crossover_point_bush = random.randint(1, length_of_level-1)
+    crossover_point_sky = random.randint(1, length_of_level - 1)
+    #
+    # crossover_point_cloud = random.randint(1, length_of_level - 1)
+    # crossover_point_pipe = random.randint(1, length_of_level - 1)
+
+    for i in range(0, 10):
+        object = random.choice(object)
+        len1 = len(level1["objects"][object])
+        len2 = len(level2["objects"][object])
+        level1["objects"][object] = level2["objects"][object]
+    print("crossover,Mutation")
 
 
 def generate_chromosome(length_of_level):
@@ -64,8 +113,8 @@ def generate_chromosome(length_of_level):
     valid_x_koopa = list(range(0, length_of_level_x))  # mushroom
     valid_y_koopa = list(range(0, 12))
 
-    valid_x_RandomBox = list(range(0, length_of_level_x))
-    valid_y_RandomBox = list(range(0, length_of_level_y - 2))
+    valid_x_random_box = list(range(0, length_of_level_x))
+    valid_y_random_box = list(range(0, length_of_level_y - 2))
 
     noOfBush = 10
     noOfSky = 10
@@ -190,6 +239,12 @@ def generate_chromosome(length_of_level):
         x = random.choice(valid_x_koopa)
         y = random.choice(valid_y_koopa)
         level["level"]["entities"]["Koopa"].append([y, x])
+    # Generate RandomBox
+    obj_count = random.randint(3, noOfKoopa)
+    for j in range(obj_count):
+        x = random.choice(valid_x_random_box)
+        y = random.choice(valid_y_random_box)
+        level["level"]["entities"]["RandomBox"].append([x, y, "RedMushroom"])
 
     return level
 
