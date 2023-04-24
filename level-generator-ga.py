@@ -40,27 +40,47 @@ class Chromosome:
                     fitness -= 100
 
             # Check if tiles are in line for Mario to jump from one to another
-            for row in range(8, 9):
-                tile_count = 0
-                empty_tile = False
-                for col in range(60):
-                    if [col, row] in self.obj_pipe or [col, row] in self.obj_bush or [col, row] in self.ent_coinBrick:
-                        empty_tile = False
-                        tile_count = 0
-                    elif [col, row] in self.ent_coinBox or [col, row] in self.ent_coin or [col,
-                                                                                           row] in self.ent_random_box:
-                        empty_tile = True
-                        tile_count = 0
-                    else:
-                        if empty_tile:
-                            tile_count += 1
-                            if tile_count >= 4:
-                                fitness += 1
-                        else:
-                            empty_tile = True
-                            tile_count = 1
-
             return fitness
+
+
+def calculate_fitness(level):
+    fitness = 0
+
+    # more entities, fitter the chromosome is
+    fitness += (10 * len(level["level"]["entities"]["CoinBox"])) + (
+            5 * len(level["level"]["entities"]["coinBrick"])) + (5 * len(level["level"]["entities"]["coin"])) + (
+                       4 * len(level["level"]["entities"]["Goomba"])) + (
+                       4 * len(level["level"]["entities"]["Koopa"])) + (
+                       3 * len(level["level"]["entities"]["RandomBox"]))
+    # If enemy is close to mario's initial position at start of game, it might kill mario before he could
+    # make a move so there should be negative fitness points for it.
+    for enemy in level["level"]["entities"]["Goomba"] + level["level"]["entities"]["Koopa"]:
+        if enemy[0] < 7:
+            fitness -= 100
+
+    # Check if tiles are in line for Mario to jump from one to another
+    for row in range(8, 9):
+        tile_count = 0
+        empty_tile = False
+        for col in range(60):
+            if [col, row] in level["level"]["objects"]["pipe"] or [col, row] in level["level"]["objects"]["bush"] or [col, row] in level["level"]["entities"]["coinBrick"]:
+                empty_tile = False
+                tile_count = 0
+            elif [col, row] in level["level"]["entities"]["CoinBox"] or [col, row] in level["level"]["entities"][
+                "coin"] or [col,
+                            row] in level["level"]["entities"]["RandomBox"]:
+                empty_tile = True
+                tile_count = 0
+            else:
+                if empty_tile:
+                    tile_count += 1
+                    if tile_count >= 4:
+                        fitness += 1
+                else:
+                    empty_tile = True
+                    tile_count = 1
+
+    return fitness
 
 
 def crossover_mutation(level1, level2, crossover_percentage, mutation_percentage):
@@ -84,51 +104,6 @@ def crossover_mutation(level1, level2, crossover_percentage, mutation_percentage
 
     print("crossover, Mutation")
     return level1
-#
-# def crossover_mutation(level1, level2, crossover_percentage):
-#     # swapping object
-#     objects = ["bush", "sky", "cloud", "pipe", "ground"]
-#     # length of number of objects in each level
-#     bush_len1 = len(level1["objects"]["bush"])
-#     bush_len2 = len(level2["objects"]["bush"])
-#
-#     sky_len1 = len(level1["objects"]["sky"])
-#     sky_len2 = len(level2["objects"]["sky"])
-#
-#     cloud_len1 = len(level1["objects"]["cloud"])
-#     cloud_len2 = len(level2["objects"]["cloud"])
-#
-#     pipe_len1 = len(level1["objects"]["pipe"])
-#     pipe_len2 = len(level2["objects"]["pipe"])
-#
-#     ground_len1 = len(level1["objects"]["ground"])
-#     ground_len2 = len(level2["objects"]["ground"])
-#
-#
-#     crossover_point_bush1 = random.randint(1, bush_len1 - 1)
-#     crossover_point_bush2 = random.randint(1, bush_len2 - 1)
-#
-#     crossover_point_sky1 = random.randint(1, sky_len1 - 1)
-#     crossover_point_sky2 = random.randint(1, sky_len2 - 1)
-#
-#     crossover_point_cloud1 = random.randint(1, cloud_len1 - 1)
-#     crossover_point_cloud2 = random.randint(1, cloud_len2 - 1)
-#
-#     crossover_point_pipe1 = random.randint(1, pipe_len1 - 1)
-#     crossover_point_pipe2 = random.randint(1, pipe_len2 - 1)
-#
-#     crossover_point_ground1 = random.randint(1, ground_len1 - 1)
-#     crossover_point_ground2 = random.randint(1, ground_len2 - 1)
-#
-#     # crossover_point_cloud = random.randint(1, length_of_level - 1)
-#     # crossover_point_pipe = random.randint(1, length_of_level - 1)
-#
-#     for i in range(0, crossover_percentage/100):
-#         object = random.choice(object)
-#         len1 = len(level1["objects"][object])
-#         len2 = len(level2["objects"][object])
-#         level1["objects"][object] = level2["objects"][object]
-#     print("crossover,Mutation")
 
 
 def generate_chromosome(length_of_level):
@@ -321,6 +296,7 @@ def save_level_to_file(level):
     with open("levels/Level1-3.json", "w") as f:
         json.dump(level, f, indent=1)
 
+
 c1 = generate_chromosome(60)
 c2 = generate_chromosome(60)
 print("\nc1\n", c1)
@@ -329,3 +305,49 @@ print("\nc2\n", c2)
 c1 = crossover_mutation(c1, c2, 30, 5)
 save_level_to_file(c1)
 init_population = 50
+
+#
+# def crossover_mutation(level1, level2, crossover_percentage):
+#     # swapping object
+#     objects = ["bush", "sky", "cloud", "pipe", "ground"]
+#     # length of number of objects in each level
+#     bush_len1 = len(level1["objects"]["bush"])
+#     bush_len2 = len(level2["objects"]["bush"])
+#
+#     sky_len1 = len(level1["objects"]["sky"])
+#     sky_len2 = len(level2["objects"]["sky"])
+#
+#     cloud_len1 = len(level1["objects"]["cloud"])
+#     cloud_len2 = len(level2["objects"]["cloud"])
+#
+#     pipe_len1 = len(level1["objects"]["pipe"])
+#     pipe_len2 = len(level2["objects"]["pipe"])
+#
+#     ground_len1 = len(level1["objects"]["ground"])
+#     ground_len2 = len(level2["objects"]["ground"])
+#
+#
+#     crossover_point_bush1 = random.randint(1, bush_len1 - 1)
+#     crossover_point_bush2 = random.randint(1, bush_len2 - 1)
+#
+#     crossover_point_sky1 = random.randint(1, sky_len1 - 1)
+#     crossover_point_sky2 = random.randint(1, sky_len2 - 1)
+#
+#     crossover_point_cloud1 = random.randint(1, cloud_len1 - 1)
+#     crossover_point_cloud2 = random.randint(1, cloud_len2 - 1)
+#
+#     crossover_point_pipe1 = random.randint(1, pipe_len1 - 1)
+#     crossover_point_pipe2 = random.randint(1, pipe_len2 - 1)
+#
+#     crossover_point_ground1 = random.randint(1, ground_len1 - 1)
+#     crossover_point_ground2 = random.randint(1, ground_len2 - 1)
+#
+#     # crossover_point_cloud = random.randint(1, length_of_level - 1)
+#     # crossover_point_pipe = random.randint(1, length_of_level - 1)
+#
+#     for i in range(0, crossover_percentage/100):
+#         object = random.choice(object)
+#         len1 = len(level1["objects"][object])
+#         len2 = len(level2["objects"][object])
+#         level1["objects"][object] = level2["objects"][object]
+#     print("crossover,Mutation")
