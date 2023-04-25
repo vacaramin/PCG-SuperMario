@@ -82,7 +82,6 @@ def calculate_fitness(level):
 
     return fitness
 
-
 def crossover_mutation(level1, level2, crossover_percentage, mutation_percentage):
     # swapping object
     objects = ["bush", "sky", "cloud", "pipe", "ground"]
@@ -288,7 +287,7 @@ def generate_chromosome(length_of_level):
 def generate_population(total_population):
     population = []
     for i in range(0, total_population):
-        population.append(generate_chromosome())
+        population.append(generate_chromosome(60))
     return population
 
 
@@ -297,14 +296,38 @@ def save_level_to_file(level):
         json.dump(level, f, indent=1)
 
 
+def selection(population, size, top_candidate_selection_size):
+    # Calculate fitness for each individual in the population
+    pop_fitness = [calculate_fitness(individual) for individual in population]
+
+    # Sort the population by fitness in descending order
+    sorted_pop = [x for _, x in sorted(zip(pop_fitness, population), reverse=True)]
+
+    # Select the top candidates with highest fitness
+    num_top_candidates = top_candidate_selection_size
+    top_candidates = sorted_pop[:num_top_candidates]
+
+    # Print the fitness values of the top candidates
+    for candidate in top_candidates:
+        print(calculate_fitness(candidate))
+
+    return top_candidates
+
+# population = generate_population(40)
+# pop_fitness = []
+# for i in range(0,40):
+#     pop_fitness.append(calculate_fitness(population[i]))
+#
+# print(pop_fitness)
+
 c1 = generate_chromosome(60)
 c2 = generate_chromosome(60)
-print("\nc1\n", c1)
-print("\nc2\n", c2)
 
+population = generate_population(40)
 c1 = crossover_mutation(c1, c2, 30, 5)
 save_level_to_file(c1)
 init_population = 50
+5\
 
 #
 # def crossover_mutation(level1, level2, crossover_percentage):
