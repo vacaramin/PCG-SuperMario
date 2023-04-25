@@ -3,11 +3,11 @@ import json
 
 
 #
-# Initial population.
-# Fitness function.
-# Selection.
-# Crossover.
-# Mutation.
+# Initial population. Done
+# Fitness function. Need Improvements
+# Selection. Done
+# Crossover. Done
+# Mutation. Done
 
 class Chromosome:
     def __init__(self, level):
@@ -47,16 +47,51 @@ def calculate_fitness(level):
     fitness = 0
 
     # more entities, fitter the chromosome is
-    fitness += (10 * len(level["level"]["entities"]["CoinBox"])) + (
+    fitness += 2 * ((10 * len(level["level"]["entities"]["CoinBox"])) + (
             5 * len(level["level"]["entities"]["coinBrick"])) + (5 * len(level["level"]["entities"]["coin"])) + (
                        4 * len(level["level"]["entities"]["Goomba"])) + (
                        4 * len(level["level"]["entities"]["Koopa"])) + (
-                       3 * len(level["level"]["entities"]["RandomBox"]))
+                       3 * len(level["level"]["entities"]["RandomBox"])))
     # If enemy is close to mario's initial position at start of game, it might kill mario before he could
     # make a move so there should be negative fitness points for it.
     for enemy in level["level"]["entities"]["Goomba"] + level["level"]["entities"]["Koopa"]:
         if enemy[0] < 7:
             fitness -= 100
+
+    # Check that no type of bricks should be on the same x-axis
+    entities = level["level"]["entities"]
+    coin_boxes = entities["CoinBox"]
+    coin_bricks = entities["coinBrick"]
+    random_boxes = entities["RandomBox"]
+
+    brick_positions = []
+    for brick_type in [coin_boxes, coin_bricks, random_boxes]:
+        for brick in brick_type:
+            brick_positions.append(brick[0])
+
+    if len(set(brick_positions)) != len(brick_positions):
+        # If x-axis of bricks are the same, give a penalty to the fitness
+        fitness -= 50
+
+    # Check that bricks are not close together in the same y-axis
+    for brick_type in [coin_boxes, coin_bricks, random_boxes]:
+        sorted_bricks = sorted(brick_type, key=lambda brick: brick[1])
+
+        for i in range(len(sorted_bricks) - 1):
+            curr_brick_y = sorted_bricks[i][1]
+            next_brick_y = sorted_bricks[i + 1][1]
+
+            if next_brick_y - curr_brick_y <= 2:
+                # If bricks are close together in the same y-axis, give a penalty to the fitness
+                fitness -= 10
+
+
+    # Check that pipes are not too close together
+    pipe_positions = [pos[0] for pos in level["level"]["objects"]["pipe"]]
+    sorted_pipes = sorted(pipe_positions)
+    for i in range(len(sorted_pipes) - 1):
+        if sorted_pipes[i + 1] - sorted_pipes[i] < 10:
+            fitness -= 50
 
     # Check if tiles are in line for Mario to jump from one to another
     for row in range(8, 9):
@@ -80,10 +115,85 @@ def calculate_fitness(level):
                     empty_tile = True
                     tile_count = 1
 
+    # Check if mushrooms are on top of a brick, or on the ground
+    for mushroom in level["level"]["entities"]["Goomba"]:
+        on_brick = False
+        for brick in level["level"]["entities"]["coinBrick"]:
+            if brick[0] == mushroom[0] and brick[1] + 1 == mushroom[1]:
+                on_brick = True
+                break
+        if not on_brick and mushroom[1] != 12:
+            fitness -= 10
+
+    # Check that bricks don't overlap with pipes/obstacles
+    for brick in level["level"]["entities"]["coinBrick"]:
+        for obstacle in level["level"]["objects"]["pipe"] + level["level"]["entities"]["coinBrick"]:
+            if obstacle[0] <= brick[0] < obstacle[0] + 2 and obstacle[1] <= brick[1] <= obstacle[1] + 1:
+                fitness -= 20
+
+    # Check that pipe height doesn't exceed
+    for pipe in level["level"]["objects"]["pipe"]:
+        if pipe[1] < 5 or pipe[1] > 9:
+            fitness -= 10
+    for pipe in level["level"]["objects"]["pipe"]:
+        pipe_x, pipe_y = pipe[0], pipe[1]
+        bricks_on_top = []
+        for brick in level["level"]["entities"]["coinBrick"]:
+            brick_x, brick_y = brick[0], brick[1]
+            if brick_x == pipe_x and brick_y < pipe_y:
+                bricks_on_top.append(brick)
+
+        if len(bricks_on_top) > 0:
+            for x in range(pipe_x - 1, pipe_x + 3):
+                if [x, pipe_y] in level["level"]["entities"]["coinBrick"]:
+                    fitness += 1
+                else:
+                    fitness -= 1
+
+    # Check that there is enough space for the mushroom to move
+    for mushroom in level["level"]["entities"]["Goomba"]:
+        mushroom_x, mushroom_y = mushroom[0], mushroom[1]
+        if [mushroom_x + 1, mushroom_y] in level["level"]["objects"]["pipe"] or \
+                [mushroom_x + 2, mushroom_y] in level["level"]["objects"]["pipe"]:
+            fitness -= 1
+        if [mushroom_x + 1, mushroom_y] in level["level"]["entities"]["coinBrick"] or \
+                [mushroom_x + 2, mushroom_y] in level["level"]["entities"]["coinBrick"]:
+            fitness -= 1
+
+    # Check that there is enough space for Mario to move where the mushroom is
+    for mushroom in level["level"]["entities"]["Goomba"]:
+        mushroom_x, mushroom_y = mushroom[0], mushroom[1]
+        for x in range(mushroom_x, mushroom_x + 3):
+            if [x, mushroom_y + 1] in level["level"]["objects"]["pipe"]:
+                fitness -= 1
+            if [x, mushroom_y + 1] in level["level"]["entities"]["coinBrick"]:
+                fitness -= 1
+
+    # Check that Mario can reach a coin
+    for coin in level["level"]["entities"]["coin"]:
+        coin_x, coin_y = coin[0], coin[1]
+        for x in range(coin_x, coin_x + 3):
+            if [x, coin_y + 1] in level["level"]["objects"]["pipe"]:
+                fitness -= 1
+            if [x, coin_y + 1] in level["level"]["entities"]["coinBrick"]:
+                fitness -= 1
+
+
     return fitness
 
 def crossover_mutation(level1, level2, crossover_percentage, mutation_percentage):
-    # swapping object
+    """
+        Perform crossover and mutation on two levels.
+
+        Args:
+            level1 (dict): The first level.
+            level2 (dict): The second level.
+            crossover_pct (float): The percentage of genetic material to exchange.
+            mutation_pct (float): The percentage of genetic material to mutate.
+
+        Returns:
+            A new level that is a crossover of level_a and level_b with mutations applied.
+        """
     objects = ["bush", "sky", "cloud", "pipe", "ground"]
 
     for object in objects:
@@ -99,7 +209,8 @@ def crossover_mutation(level1, level2, crossover_percentage, mutation_percentage
         # perform mutation
         for i in range(len1):
             if random.random() < mutation_percentage / 100:
-                level1["level"]["objects"][object][i] = random.choice(level2["level"]["objects"][object])
+                if len1 < len2:
+                    level1["level"]["objects"][object][i] = random.choice(level2["level"]["objects"][object][i])
 
     print("crossover, Mutation")
     return level1
@@ -296,12 +407,14 @@ def save_level_to_file(level):
         json.dump(level, f, indent=1)
 
 
+
+
 def selection(population, size, top_candidate_selection_size):
     # Calculate fitness for each individual in the population
     pop_fitness = [calculate_fitness(individual) for individual in population]
 
     # Sort the population by fitness in descending order
-    sorted_pop = [x for _, x in sorted(zip(pop_fitness, population), reverse=True)]
+    sorted_pop = [x for _, x in sorted(zip(pop_fitness, population), key=lambda x: x[0], reverse=True)]
 
     # Select the top candidates with highest fitness
     num_top_candidates = top_candidate_selection_size
@@ -313,64 +426,42 @@ def selection(population, size, top_candidate_selection_size):
 
     return top_candidates
 
-# population = generate_population(40)
-# pop_fitness = []
-# for i in range(0,40):
-#     pop_fitness.append(calculate_fitness(population[i]))
-#
-# print(pop_fitness)
+def genetic_algorithm(population_size, num_generations, crossover_pct, mutation_pct):
+    # Generate an initial population of individuals.
+    population = generate_population(population_size)
 
-c1 = generate_chromosome(60)
-c2 = generate_chromosome(60)
+    # Evaluate the fitness of each individual in the population.
+    fitness_scores = [calculate_fitness(individual) for individual in population]
 
-population = generate_population(40)
-c1 = crossover_mutation(c1, c2, 30, 5)
+    # Keep track of the best individual in each generation.
+    best_individuals = [max(zip(fitness_scores, population))[1]]
+
+    for i in range(num_generations):
+        # Select parents based on their fitness.
+        parents = selection(population, population_size//2, population_size//4)
+
+        # Create offspring by applying genetic operators to the parents.
+        offspring = []
+        for j in range(population_size//2):
+            parent1 = random.choice(parents)
+            parent2 = random.choice(parents)
+            child = crossover_mutation(parent1, parent2, crossover_pct, mutation_pct)
+            offspring.append(child)
+
+        # Evaluate the fitness of the offspring.
+        offspring_fitness_scores = [calculate_fitness(individual) for individual in offspring]
+
+        # Select the best individuals from the parent and offspring populations.
+        combined_population = population + offspring
+        combined_fitness_scores = fitness_scores + offspring_fitness_scores
+        sorted_population = [x for _, x in sorted(zip(combined_fitness_scores, combined_population), key=lambda x: x[0], reverse=True)]
+        population = sorted_population[:population_size]
+        fitness_scores = [calculate_fitness(individual) for individual in population]
+
+        # Record the best individual in this generation.
+        best_individuals.append(max(zip(fitness_scores, population))[1])
+
+    return best_individuals
+c1 = genetic_algorithm(40,10,50,10)
 save_level_to_file(c1)
-init_population = 50
-5\
 
-#
-# def crossover_mutation(level1, level2, crossover_percentage):
-#     # swapping object
-#     objects = ["bush", "sky", "cloud", "pipe", "ground"]
-#     # length of number of objects in each level
-#     bush_len1 = len(level1["objects"]["bush"])
-#     bush_len2 = len(level2["objects"]["bush"])
-#
-#     sky_len1 = len(level1["objects"]["sky"])
-#     sky_len2 = len(level2["objects"]["sky"])
-#
-#     cloud_len1 = len(level1["objects"]["cloud"])
-#     cloud_len2 = len(level2["objects"]["cloud"])
-#
-#     pipe_len1 = len(level1["objects"]["pipe"])
-#     pipe_len2 = len(level2["objects"]["pipe"])
-#
-#     ground_len1 = len(level1["objects"]["ground"])
-#     ground_len2 = len(level2["objects"]["ground"])
-#
-#
-#     crossover_point_bush1 = random.randint(1, bush_len1 - 1)
-#     crossover_point_bush2 = random.randint(1, bush_len2 - 1)
-#
-#     crossover_point_sky1 = random.randint(1, sky_len1 - 1)
-#     crossover_point_sky2 = random.randint(1, sky_len2 - 1)
-#
-#     crossover_point_cloud1 = random.randint(1, cloud_len1 - 1)
-#     crossover_point_cloud2 = random.randint(1, cloud_len2 - 1)
-#
-#     crossover_point_pipe1 = random.randint(1, pipe_len1 - 1)
-#     crossover_point_pipe2 = random.randint(1, pipe_len2 - 1)
-#
-#     crossover_point_ground1 = random.randint(1, ground_len1 - 1)
-#     crossover_point_ground2 = random.randint(1, ground_len2 - 1)
-#
-#     # crossover_point_cloud = random.randint(1, length_of_level - 1)
-#     # crossover_point_pipe = random.randint(1, length_of_level - 1)
-#
-#     for i in range(0, crossover_percentage/100):
-#         object = random.choice(object)
-#         len1 = len(level1["objects"][object])
-#         len2 = len(level2["objects"][object])
-#         level1["objects"][object] = level2["objects"][object]
-#     print("crossover,Mutation")
