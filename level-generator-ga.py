@@ -2,7 +2,7 @@ import random
 import json
 
 
-#
+#Improved
 # Initial population.
 # Fitness function.
 # Selection.
