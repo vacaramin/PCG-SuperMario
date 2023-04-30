@@ -1,6 +1,6 @@
 import random
 import json
-
+import numpy as np
 
 # Improved
 # Initial population.
@@ -25,13 +25,25 @@ def calculate_fitness(level):
     #mushroom initial position
     for enemy in level["level"]["entities"]["Goomba"]:
         if enemy[0] < 13:
-            fitness -= 10
+            fitness -= 16
     #Turtle initial position
     for enemy in level["level"]["entities"]["Koopa"]:
         if enemy[0] < 13:
-            fitness -= 10
-
-
+            fitness -= 16
+    #the brick and coin must not overlap
+    for coin in level['level']['entities']['coin']:
+        for brick in level['level']['objects']['ground']: 
+            if coin[0]==brick[0] and coin[1]==brick[1]:
+                fitness-=7
+    for coin in level['level']['entities']['coin']:
+        for pipe in level['level']['objects']['pipe']: 
+            if coin[0]==pipe[0] and coin[1]==pipe[1]:
+                fitness-=10
+    #considerate amount of pipes and holes
+    if len(level['level']['objects']['sky'])>2:
+        fitness+=10
+    if len(level['level']['objects']['pipe'])>2:
+        fitness+=10
     # if hole is at mario's initial position at start of game, it might kill mario before he could make a move
     # so there should be less negative fitness points for it.
     for hole in level['level']['objects']['sky']:
@@ -42,23 +54,23 @@ def calculate_fitness(level):
     for pipe in level['level']['objects']['pipe']:
         for randombox in level['level']['entities']['RandomBox']:
             if (pipe[0] <= randombox[0] and pipe[0] +2 >= randombox[0]) and (pipe[1] <= randombox[1] and pipe[1] - 3  >= randombox[1]):
-                fitness -= 10
+                fitness -= 12
     for pipe in level['level']['objects']['pipe']:
         for randombox in level['level']['entities']['CoinBox']:
             if (pipe[0] <= randombox[0] and pipe[0] +2 >= randombox[0]) and (pipe[1] <= randombox[1] and pipe[1] - 3 >= randombox[1]):
-                fitness -= 10
+                fitness -= 12
     for pipe in level['level']['objects']['pipe']:
         for randombox in level['level']['entities']['coinBrick']:
             if (pipe[0] <= randombox[0] and pipe[0] +2 >= randombox[0]) and (pipe[1] <= randombox[1] and pipe[1] - 3 >= randombox[1]):
-                fitness -= 10
+                fitness -= 12
     for pipe in level['level']['objects']['pipe']:
         for randombox in level['level']['objects']['ground']:
             if (pipe[0] <= randombox[0] and pipe[0] +2 >= randombox[0]) and (pipe[1] <= randombox[1] and pipe[1] - 3 >= randombox[1]):
-                fitness -= 10
+                fitness -= 12
     for pipe in level['level']['objects']['pipe']:
         for randombox in level['level']['objects']['sky']:
             if (pipe[0] <= randombox[0] and pipe[0] +2 >= randombox[0]) and (pipe[1] <= randombox[1] and pipe[1] - 3 >= randombox[1]):
-                fitness -= 10
+                fitness -= 12
 
     # There shouldn't be a brick close to top of the pipe is
     for pipe in level['level']['objects']['pipe']:
@@ -88,13 +100,26 @@ def calculate_fitness(level):
     # the coin should not be high enough to be reached
     for coin in level['level']['entities']['coin']:
         if coin[1] < 11 and coin[1] > 3:
-            fitness += 1
+            fitness += 3
         else:
-            fitness -= 1
+            fitness -= 3
+    #considerate amount of enemies
+    if len(level['level']['entities']['Goomba'])<5 and len(level['level']['entities']['Koopa'])<5:
+        fitness+=5
+    else:
+        fitness-=5
     # complete hole more fitness
+
     for hole in level['level']['objects']['sky']:
         if hole[1] == 14:
-            fitness += 1
+            fitness += 5
+    #random box and coin box must not be too much greater in height
+    for randombox in level['level']['entities']['RandomBox']:
+        if randombox[1]>5:
+            fitness+=5
+    for coinbox in level['level']['entities']['CoinBox']:
+        if coinbox[1]>5:
+            fitness+=5
 
     # Pipes should not be that close that they should stack on each other
     for brick1 in level['level']['entities']['RandomBox']:
@@ -174,8 +199,8 @@ def crossover_mutation(level1, level2, crossover_percentage, mutation_percentage
 
         # calculate crossover point
         crossover_point = int(crossover_percentage / 100 * len1)
-        print(crossover_point)
-        print('over to you')
+        #print(crossover_point)
+        #print('over to you')
         # perform crossover
         level1["level"]["objects"][object][:crossover_point], level2["level"]["objects"][object][:crossover_point] = \
         level2["level"]["objects"][object][:crossover_point], level1["level"]["objects"][object][:crossover_point]
@@ -183,9 +208,10 @@ def crossover_mutation(level1, level2, crossover_percentage, mutation_percentage
         # perform mutation
         for i in range(len1):
             if random.random() < mutation_percentage / 100:
-                print(i)
-                print('yikes')
-                level1["level"]["objects"][object][i] = random.choice(level2["level"]["objects"][object])
+                #print(i,len(level1['level']['objects'][object]))
+               # print('yikes')
+                if i<len(level1['level']['objects'][object]):
+                    level1["level"]["objects"][object][i] = random.choice(level2["level"]["objects"][object])
 
     print("crossover, Mutation")
     return level1
@@ -380,13 +406,28 @@ def save_level_to_file(level):
         json.dump(level, f, indent=1)
 
 
-def selection(population, size, top_candidate_selection_size):
+def selection(population, size, top_candidate_selection_size,threshold):
     # Calculate fitness for each individual in the population
-    pop_fitness = [calculate_fitness(individual) for individual in population]
-
+    pop_fitness = np.array([calculate_fitness(individual) for individual in population])
+    """THE THRESHOLD PART
+    pop_fitness1=[]
+    pop_fitness=(pop_fitness/100)% 1.1
+    population1=[]
+    for i in range(len(pop_fitness)):
+        if i>=threshold:
+            pop_fitness1.append(pop_fitness[i])
+            population1.append(population[i])
+    population=population1
+    pop_fitness=pop_fitness1
+    ENDING OF THRESHOLD PART"""
+    #Ordering the fitness list in descending manner
+    ko=np.argsort(np.array(pop_fitness))
+    pop_fitness=ko[::-1][:len(ko)]
+    
     # Sort the population by fitness in descending order
-    sorted_pop = [x for _, x in sorted(zip(pop_fitness, population), reverse=True)]
-
+    
+    sorted_pop = [population[i] for i in pop_fitness]
+    
     # Select the top candidates with highest fitness
     num_top_candidates = top_candidate_selection_size
     top_candidates = sorted_pop[:num_top_candidates]
@@ -405,10 +446,20 @@ def selection(population, size, top_candidate_selection_size):
 #
 # print(pop_fitness)
 
-c1 = generate_chromosome(60)
-c2 = generate_chromosome(60)
+#c1 = generate_chromosome(60)
+#c2 = generate_chromosome(60)
 
 population = generate_population(400)
-c1 = selection(population,40,1)
+parents = selection(population,400,100)
+for i in range(400):
+    offspring=[]
+    for j in range(400):
+            parent1 = random.choice(parents)
+            parent2 = random.choice(parents)
+            child = crossover_mutation(parent1, parent2, 50, 5)
+            offspring.append(child)
+    parents=selection(offspring,len(offspring),100,0.5)
+    
 
-save_level_to_file(c1[0])
+
+save_level_to_file(parents[0])
