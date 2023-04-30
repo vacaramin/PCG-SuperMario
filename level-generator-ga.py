@@ -25,20 +25,20 @@ def calculate_fitness(level):
     #mushroom initial position
     for enemy in level["level"]["entities"]["Goomba"]:
         if enemy[0] < 13:
-            fitness -= 16
+            fitness -= 30
     #Turtle initial position
     for enemy in level["level"]["entities"]["Koopa"]:
         if enemy[0] < 13:
-            fitness -= 16
+            fitness -= 30
     #the brick and coin must not overlap
     for coin in level['level']['entities']['coin']:
         for brick in level['level']['objects']['ground']: 
             if coin[0]==brick[0] and coin[1]==brick[1]:
-                fitness-=7
+                fitness-=12
     for coin in level['level']['entities']['coin']:
         for pipe in level['level']['objects']['pipe']: 
             if coin[0]==pipe[0] and coin[1]==pipe[1]:
-                fitness-=10
+                fitness-=12
     #considerate amount of pipes and holes
     if len(level['level']['objects']['sky'])>2:
         fitness+=10
@@ -105,14 +105,14 @@ def calculate_fitness(level):
             fitness -= 3
     #considerate amount of enemies
     if len(level['level']['entities']['Goomba'])<5 and len(level['level']['entities']['Koopa'])<5:
-        fitness+=5
+        fitness+=10
     else:
-        fitness-=5
+        fitness-=10
     # complete hole more fitness
 
     for hole in level['level']['objects']['sky']:
         if hole[1] == 14:
-            fitness += 5
+            fitness += 18
     #random box and coin box must not be too much greater in height
     for randombox in level['level']['entities']['RandomBox']:
         if randombox[1]>5:
@@ -406,7 +406,7 @@ def save_level_to_file(level):
         json.dump(level, f, indent=1)
 
 
-def selection(population, size, top_candidate_selection_size,threshold):
+def selection(population, size, top_candidate_selection_size):
     # Calculate fitness for each individual in the population
     pop_fitness = np.array([calculate_fitness(individual) for individual in population])
     """THE THRESHOLD PART
@@ -435,7 +435,7 @@ def selection(population, size, top_candidate_selection_size,threshold):
     # Print the fitness values of the top candidates
     for candidate in top_candidates:
         print(calculate_fitness(candidate))
-
+    
     return top_candidates
 
 
@@ -458,7 +458,7 @@ for i in range(400):
             parent2 = random.choice(parents)
             child = crossover_mutation(parent1, parent2, 50, 5)
             offspring.append(child)
-    parents=selection(offspring,len(offspring),100,0.5)
+    parents=selection(offspring,len(offspring),100)
     
 
 
